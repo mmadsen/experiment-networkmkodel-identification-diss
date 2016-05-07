@@ -1,0 +1,986 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"mongo",
+				"mongo-index"
+			],
+			[
+				"slice-stratified-filtered-late-",
+				"slice-stratified-filtered-late-coalesce"
+			],
+			[
+				"gc",
+				"gc-early-lineage-split-2-networkmodel"
+			],
+			[
+				"slice-stratified-sampled-late",
+				"slice-stratified-sampled-late-coalesce"
+			],
+			[
+				"sampled-traits-la",
+				"sampled-traits-late-coalesce"
+			],
+			[
+				"url",
+				"url"
+			],
+			[
+				"stri",
+				"strip_prefix_and_titleize_category"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"contents": "#!/bin/sh\n\necho \"=========================================================\"\necho \"  Building approximate nearest neighbor model\"\necho \"=========================================================\"\n\nmkdir -p rawnetworkmodels/sc-nearest-neighbor-1-networkmodel\nmkdir -p network-nearestneighbor\n\nseriationct-build-spatial-neighbor-network.py \\\n	--outputdirectory rawnetworkmodels/sc-nearest-neighbor-1 \\\n	--experiment sc-nearest-neighbor-1 \\\n	--slices 10 \\\n	--numpopulations 32 \\\n	--spatialaspectratio 6.0 \\\n	--edgeweight 10 \\\n	--meanedgesperpopulation 1.25 \\\n	--sdedgesperpopulation 0.25 \\\n	--exponentialcoefficient 3 \\\n	--debug 0\n\ncp bin/build-networkmodel.sh rawnetworkmodels/sc-nearest-neighbor-1-networkmodel\ncd rawnetworkmodels\nzip -r sc-nearest-neighbor-1-network-gml.zip sc-nearest-neighbor-1-networkmodel/*.gml\nzip -r sc-nearest-neighbor-1-full-network.zip sc-nearest-neighbor-1-networkmodel\ncp sc-nearest-neighbor-1-networkmodel/sc-nearest-neighbor-1XY.txt ../xyfiles\nmv sc-nearest-neighbor-1-network-gml.zip ../network-nearestneighbor\ncd ..\n\nseriationct-explain-networkmodel.py \\\n	--networkmodel network-nearestneighbor/sc-nearest-neighbor-1-network-gml.zip\n\n\n\n",
+			"file": "experiments/sc-4/bin/build-networkmodel.sh",
+			"file_size": 1214,
+			"file_write_time": 131013249820000000,
+			"settings":
+			{
+				"buffer_size": 1166,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "template/bin/annotate-seriation-output.sh",
+			"settings":
+			{
+				"buffer_size": 395,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "bin/create-experiment-directory.sh",
+			"settings":
+			{
+				"buffer_size": 1010,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "template/runall.sh",
+			"settings":
+			{
+				"buffer_size": 1218,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "experiments/sc-5-nn/README.md",
+			"settings":
+			{
+				"buffer_size": 539,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "experiments/sc-4-nn/README.md",
+			"settings":
+			{
+				"buffer_size": 495,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "template/bin/build-networkmodel.sh",
+			"settings":
+			{
+				"buffer_size": 994,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "template/bin/build-simulations.sh",
+			"settings":
+			{
+				"buffer_size": 656,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "#!/bin/sh\n\nmkdir -p exported-data\n\ncat << EOF > /tmp/mongo-index\nuse REPLACEME_samples_raw;\ndb.seriationct_sample_unaveraged.ensureIndex( { simulation_run_id: 1 })\nEOF\n\nmongo < /tmp/mongo-index\nrm /tmp/mongo-index\n\necho \"=================== exporting nearest ==============\"\n\nseriationct-export-simids.py --experiment REPLACEME --outputfile REPLACEME-simids.txt\nfor d in `cat REPLACEME-simids.txt`;\ndo ( \n	echo \"export $d\"\n	seriationct-export-single-simulation.py --experiment REPLACEME \\\n		--outputdirectory exported-data \\\n		--simid $d \n); done\n\n",
+			"file": "template/bin/export-data.sh",
+			"file_size": 606,
+			"file_write_time": 131013254630000000,
+			"settings":
+			{
+				"buffer_size": 548,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "experiments/sc-5-nn/bin/export-data.sh",
+			"settings":
+			{
+				"buffer_size": 528,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "#!/bin/sh\n\nmkdir -p sampled-traits\nmkdir -p slice-stratified-sampled-data\nmkdir -p slice-stratified-filtered-data\n\n\n######## Sample exported datafiles to create synthetic assemblages of 500 artifacts each #########\n\necho \"==================== sample exported data files =====================\"\n\nseriationct-sample-exported-datafiles.py --inputdirectory exported-data \\\n	--outputdirectory sampled-traits \\\n	--samplesize 500 \\\n	--debug 1 \\\n	--dropthreshold 0.01\n\n######## Sample assemblages to pull one assemblage per time interval, with no overlap ########\n\necho \"==================== sample temporal slices =====================\"\n\nseriationct-sample-assemblages-for-seriation.py --inputdirectory sampled-traits \\\n	--outputdirectory slice-stratified-sampled-data \\\n 	--sampletype slicestratified \\\n 	--numsamples 1 \\\n 	--samplefraction 0.05 \\\n 	--debug 1 \\\n 	--networkmodel networkmodels/REPLACEME-network.zip\n\n######## Filter slice-stratified assemblages to eliminate types with less than 3 non-zero entries #######\n\necho \"==================== filter sampled assemblages =====================\"\n\nseriationct-filter-type-unimodality.py \\\n	--inputdirectory slice-stratified-sampled-data \\\n	--outputdirectory slice-stratified-filtered-data \\\n	--networkmodel networkmodels/REPLACEME-network.zip \\\n	--debug 0 \\\n	--dropthreshold 0.10 \\\n	--filtertype onlynonzero \\\n	--minnonzero 3\n",
+			"file": "template/bin/simulation-postprocess.sh",
+			"file_size": 1373,
+			"file_write_time": 131013261490000000,
+			"settings":
+			{
+				"buffer_size": 1372,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "experiments/sc-5-nn/bin/build-networkmodel.sh",
+			"settings":
+			{
+				"buffer_size": 970,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "experiments/sc-5-nn/bin/build-seriations.sh",
+			"settings":
+			{
+				"buffer_size": 355,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "experiments/sc-4-nn/bin/export-data.sh",
+			"settings":
+			{
+				"buffer_size": 574,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "template/bin/build-seriations.sh",
+			"settings":
+			{
+				"buffer_size": 361,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "#!/bin/sh\n\nidss-batch-builder.py --inputdirectory slice-stratified-filtered-linear-data \\\n	--outputdirectory seriations-linear-filtered \\\n	--xyfile xyfiles/gc-simple-linear-sample-1XY.txt \\\n	--dobootstrapsignificance 1 \\\n	--database gc-simple-linear-sample-3_samples_raw \\\n	--frequency 1 \\\n	--continuity 1 \\\n	--experiment gc-simple-linear-sample-3 \\\n	--jobdirectory jobs \\\n	--parallelism 1 \\\n	--debug 0\n",
+			"file": "experiments/sc-4/bin/build-seriations.sh",
+			"file_size": 798,
+			"file_write_time": 131012423720000000,
+			"settings":
+			{
+				"buffer_size": 403,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 392.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"inst",
+				"Package Control: Install Package"
+			],
+			[
+				"",
+				"Package Control: Upgrade Package"
+			],
+			[
+				"in",
+				"Package Control: Install Package"
+			],
+			[
+				"Pac",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 593.0
+	},
+	"console":
+	{
+		"height": 126.0,
+		"history":
+		[
+			"import urllib.request,os; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); open(os.path.join(ipp, pf), 'wb').write(urllib.request.urlopen( 'http://sublime.wbond.net/' + pf.replace(' ','%20')).read())"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-4-nn",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-4-nn/bin",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-5-nn",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/template",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/template/bin"
+	],
+	"file_history":
+	[
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-4/bin/export-data.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-4/bin/build-simulations.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/template/bin/run-simulations-gridengine.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-4-nn/bin/run-simulations-gridengine.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/template/README.md",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-3/bin/build-simulations.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-4/networkmodel-priors.json",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/experiment-index.md",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-4/bin/build-networkmodel.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-3/bin/annotate-seriation-output.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-3/bin/build-networkmodel.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-3/bin/build-seriations.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-3/bin/export-data.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-3/bin/run-simulations.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-3/README.md",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-3/runall.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-3/bin/run-simulations-gridengine.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/create-index.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-1/README.md",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-2/README.md",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-2/bin/bn.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-2/bin/annotate-seriation-output.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-2/bin/run-seriations.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/README.md",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-2/bin/build-networkmodel.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-2/bin/build-simulations.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-2/bin/export-data.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-2/bin/simulation-postprocess.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-2/bin/build-seriations.sh",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/experiments/sc-2/check.js",
+		"/Users/mark/local-research/diss/experiments/experiment-seriation-classification/seriationclassification.sublime-project",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_layouts/project_layout.html",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2016-01-26-quantifying-similarity-seriations.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_layouts/tag_page.html",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_layouts/default.html",
+		"/Users/mark/Dropbox/Research/websites/lnraw/bio.html",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2015-07-07-new-directions-ct-computing.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-09-14-ctmixtures-cluster-setup.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2012-10-02-coarse-graining-history-ctmodels.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2016-01-24-neural-network-ami-for-ec2.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-11-28-more-temporal-networks-python.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-11-20-ctmixtures-analysis-gbm-next-steps.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-11-07-ctmixtures-analysis-randomforests.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-09-14-ctmixtures-job-execution.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2013-10-30-unconference-future-statistics.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2013-09-26-classification-experiment-data-cleaning.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2012-10-01-slatkin-power-experiment.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2012-09-22-slatkin-test-error-power.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_config.yml",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_plugins/jekyll.tag-cloud.rb",
+		"/Users/mark/Dropbox/Research/websites/lnraw/index.html",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_plugins/rssgenerator.rb",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_plugins/github_feed.rb",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2015-09-06-saa2016-abstract.md",
+		"/Users/mark/Library/Application Support/Sublime Text 3/Packages/User/Preferences.sublime-settings",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2015-07-27-simupop-performance-in-seriationct.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2015-08-24-simulation-performance-explorations.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2015-05-14-seriationct-sample-size-experiments.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2015-09-01-idss-seration-version-2.3-released.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_drafts/states-of-ct-research.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_drafts/new-directions-ct-computing.md",
+		"/Users/mark/local-research/diss/experiments/experiment-seriationct-calibration/experiments/two-node-three-slice/two-node-three-slice-001.gml",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2015-03-07-structured-information-pac-learning.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2015-05-26-state-of-ct-research.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2015-04-27-seriationct-next-steps.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2015-04-11-saa2015-papers.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2015-02-23-seriationct-experiment-plan.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2015-02-15-ctmixtures-docker-container.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2015-01-01-research-priorities-2015.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_plugins/rtm_feed.rb",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-12-04-ctmixtures-splitting-analysis.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-12-07-equifinality-4-todo.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_layouts/essay.html",
+		"/Users/mark/Dropbox/Research/projects/coarsegraining/experiment-ctmixtures/paper/plos_template.tex",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-10-17-how-washingtonians-might-enforce-mccleary.md",
+		"/Volumes/ResearchBk/sim/src/an-al-wm.json",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-10-6-ctmixtures-calibration-part2.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-09-22-ctmixtures-model-calibration.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-09-18-equifinality-initial-analysis.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_drafts/equifinality-initial-analysis.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-09-17-equifinality-data-export.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-09-16-equifinality-experiment-status.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/bymodel.html",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-09-15-ctmixtures-cost-analysis.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-09-12-evolutionary-narratives-inference-model-selection.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-09-10-my_evolutionary_narrative.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-08-10-ctmixtures-experiment-design.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-08-31-seriationct-experiment-outline.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-08-29-saa2015-abstracts.md",
+		"/Users/mark/Dropbox/Research/Third-Party-Code/crema-2014-abc/example-run.log",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-08-10-ctmixtures-observables-parameters.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/software.html",
+		"/Users/mark/Dropbox/Research/websites/lnraw/tools.html",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-07-13-seriationct-temporal-model.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-07-28-implementing-temporal-networks-in-python.md",
+		"/Users/mark/Dropbox/Research/Dissertation Project/models/wrightfisher-twoallele.R",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-07-17-eight-years-on-sanjuan.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-06-17-seriationct-requirements.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-07-16-experiment-template-openscience.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/openscience.html",
+		"/Users/mark/Dropbox/Research/templates/experiment-template/README.md",
+		"/Users/mark/Dropbox/Research/templates/experiment-template/paper/paper.Rmd",
+		"/Users/mark/Dropbox/Research/templates/experiment-template/paper/xelatex-template.tex",
+		"/Users/mark/Dropbox/Research/templates/experiment-template/outline/outline.tex",
+		"/Users/mark/Dropbox/Research/websites/lnraw/allposts.html",
+		"/Users/mark/Downloads/differencing numpy arrays.py",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_layouts/post.html",
+		"/Users/mark/Dropbox/Research/websites/lnraw/openproblems.html",
+		"/Users/mark/Dropbox/Research/websites/lnraw/byexperiment.html",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_plugins/postcategory_filter.rb",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_plugins/greycite_biblio.rb",
+		"/Users/mark/Dropbox/Research/websites/lnraw/blog.html",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-07-09-ctmixtures-timeaveraging.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_data/projects.yaml",
+		"/Users/mark/Dropbox/Research/websites/lnraw/projects/coarsegraining/index.html",
+		"/Users/mark/Dropbox/Research/websites/lnraw/projects/nicheconstruction/index.html",
+		"/Users/mark/Dropbox/Research/websites/lnraw/projects/structuredinfo/index.html",
+		"/Users/mark/Dropbox/Research/websites/lnraw/.gitignore",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-07-09-semanticaxelrod-review-revisions.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_drafts/ctmixtures-timeaveraging.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2013-08-11-semantic-ct-models-2007-notes.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2014-06-20-spatiotemporal-review.md",
+		"/Users/mark/Dropbox/Charitable/Seattle Arts and Lectures/analysis/donor-analysis/template.tex",
+		"/Users/mark/Dropbox/Research/websites/lnraw/publications.html",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2011-01-11-he-and-stone.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2011-02-23-renormalization.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2011-06-24-ct-tuplespace-artfacts.md",
+		"/Users/mark/Dropbox/Research/websites/lnraw/_posts/2012-06-14-renormalization-theory-archy.md"
+	],
+	"find":
+	{
+		"height": 23.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"-linear",
+			"sc-nearest-neighbor-1",
+			"gc-simple-linear-sample-1",
+			"sc-nearest-neighbor-1",
+			"network-nearestneighbor",
+			"gc-simple-linear-sample-1",
+			"gc-simple-lineage-split-3",
+			"exported-data-linear",
+			"gc-simple-linear-sample-3",
+			"gc-simple-linear-sample",
+			"gc-simple-linear-sample-1",
+			"network-linear",
+			"gc-simple-linear-sample-1",
+			"network-lineage",
+			"split-",
+			"split",
+			"early",
+			"simple",
+			"-1-",
+			"n",
+			"N",
+			"and",
+			"simply",
+			"model",
+			"\\n",
+			"\\\"",
+			"**",
+			"navbar",
+			"javascript",
+			"javascript\">try{Typekit.load();}catch(e){}</script>\n  <script type=\"text/javascript\" src=\"http://cdn"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 4,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "experiments/sc-4/bin/build-networkmodel.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1166,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								396,
+								374
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Shell-Unix-Generic.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 14,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "template/bin/annotate-seriation-output.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 395,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								394,
+								394
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Shell-Unix-Generic.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 13,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "bin/create-experiment-directory.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1010,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								77,
+								77
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Shell-Unix-Generic.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 12,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "template/runall.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1218,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								928,
+								928
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Shell-Unix-Generic.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "experiments/sc-5-nn/README.md",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 539,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								219,
+								219
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "experiments/sc-4-nn/README.md",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 495,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								493,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "template/bin/build-networkmodel.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 994,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								374,
+								374
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Shell-Unix-Generic.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 8,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "template/bin/build-simulations.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 656,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								442,
+								442
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Shell-Unix-Generic.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 10,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "template/bin/export-data.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 548,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								406,
+								406
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Shell-Unix-Generic.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "experiments/sc-5-nn/bin/export-data.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 528,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								528,
+								528
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Shell-Unix-Generic.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "template/bin/simulation-postprocess.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1372,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								459,
+								459
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Shell-Unix-Generic.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 11,
+					"file": "experiments/sc-5-nn/bin/build-networkmodel.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 970,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								459,
+								459
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Shell-Unix-Generic.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 12,
+					"file": "experiments/sc-5-nn/bin/build-seriations.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 355,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								273,
+								273
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Shell-Unix-Generic.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 13,
+					"file": "experiments/sc-4-nn/bin/export-data.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 574,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								548,
+								548
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Shell-Unix-Generic.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 11,
+					"type": "text"
+				},
+				{
+					"buffer": 14,
+					"file": "template/bin/build-seriations.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 361,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								259,
+								259
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Shell-Unix-Generic.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 9,
+					"type": "text"
+				},
+				{
+					"buffer": 15,
+					"file": "experiments/sc-4/bin/build-seriations.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 403,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								403,
+								403
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Shell-Unix-Generic.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 15,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 23.0
+	},
+	"input":
+	{
+		"height": 33.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 112.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "seriationclassification.sublime-project",
+	"replace":
+	{
+		"height": 42.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"",
+				"bymodel.html"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"",
+				"~/src/neutral-model-cpp/neutral-model-cpp.sublime-project"
+			]
+		],
+		"width": 380.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 389.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
