@@ -33,7 +33,6 @@ while [ $count -ne 0 ]
 do
 	sleep 60
 	count=`qstat | wc -l`
-	count=$count-2
 	echo "still $count exports running in gridengine"
 done
 
@@ -68,7 +67,6 @@ while [ $count -ne 0 ]
 do
 	sleep 60
 	count=`qstat | wc -l`
-	count=$count-2
 	echo "still $count exports running in gridengine"
 done
 
@@ -102,7 +100,6 @@ while [ $count -ne 0 ]
 do
 	sleep 60
 	count=`qstat | wc -l`
-	count=$count-2
 	echo "still $count exports running in gridengine"
 done
 

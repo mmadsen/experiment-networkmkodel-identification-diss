@@ -14,8 +14,6 @@ while [ $count -ne 0 ]
 do
 	sleep 60
 	count=`qstat | wc -l`
-	## first two lines are headers
-	count=$count-2
 	echo "still $count seriations running in gridengine"
 done
 
