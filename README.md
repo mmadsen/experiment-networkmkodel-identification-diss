@@ -1,42 +1,86 @@
-# Experiment Seriation-Classification #
+# Experiment: Network Model Identification #
 
-Simulation experiments to construct and study methods for inferring regional patterns of 
-metapopulation connectivity from the output of simulated cultural transmission on those regional networks, 
-using seriations of sampled and time-averaged cultural traits from those simulations as the 
-data source.  
+Given the success of `experiment-seriation-classification` in correctly identifying samples of seriations from regional temporal network models, the next steps are to:
 
-The problem boils down to a classifier problem in machine learning terms:  treating the regional network 
-model as the target label, and the seriation output (in the form of a network or graph) as the training data, 
-can we infer the label of individual seriations?  
+1.  Create many network models, to ensure that results are not idiosyncratic to a single structural graph.   
+1.  Construct a much larger database of simulated CT across the collection of randomly generated network models.  
+1.  Capture all of the network model, simulation, and analytic pipeline hyperparameters in the database in such a way that we can use them in analyzing identification failures and successes later.
 
-The first method that I'm examining is nearest-neighbor matching with a distance metric defined as the sum of Laplacian eigenvalues.  
+A further requirement is to include all of the network models likely to be relevant to the Mississippian data set in my dissertation.  The earlier seriation classification experiments were driven by exploring whether identification was possible, and the network model set was not comprehensive.  
 
 
-## Experiment:  SC-1 ##
+## Note on Structure ##
 
-SC-1 is a simple contrast between two regional network models.  Both models are composed of 10 time slices.
+In the previous experiments, subdirectories under `experiments` often contained paired experiments, or even comparisons of 4 different network models.  One of the goals of v1.4 of the `seriationct` software package was to create a robust simulation and data processing pipeline, capable of running in parallel on a cluster unattended.  
 
-Model #1 is called "linear" in the experiment directory because it should ideally yield simple, linear seriation solutions because the only thing occurring is sampling through time.  At any given time, the metapopulation is composed of 64 subpopulations each.  Each subpopulation is fully connected, so that any subpopulation can exchange migrants with any other, and there are no differences in edge weights (and thus migration rates).  Each subpopulation in slice $N$ is the child of a random subpopulation in slice $N-1$.  
+To this end:
 
-Model #2 is called "lineage" in the experiment directory because it features 4 clusters of subpopulations, with 8 subpopulations per cluster.  Subpopulations are fully connected within a cluster, with edge weight 10.  Subpopulations are connected between subpopulations at fraction 0.1, with edge weight 1.  This yields a strong tendency to exchange migrants within clusters, and at a much lower rate between clusters.  For the first 4 time slices, all four clusters of subpopulations are interconnected, but in slice 4, a "split" occurs, removing interconnections between two sets of clusters, leaving ${1,2}$ interconnected and ${3,4}$ interconnected, but no connections between these sets.  The resulting clusters then evolve for 6 more time slices on separate trajectories, giving rise to a "lineage split."
+1.  Each subdirectory represents the network model instances, simulation runs, sampling and postprocessing, and seriations derived from a single network model specification.  
+1.  Each subdirectory is now created by `seriationct-create-experiment-directory.sh`, which unpacks and customizes the current experiment template which matches the given release of `seriationct` itself.  Keeping experiment template/directory trees in sync with software was increasingly problematic.
 
-Neutral cultural transmission is simulated across these two network models, with 50 simulation replicates on each model, and a common set of parameters:
+## CT Simulations ##
+
+All simulations of cultural transmission in this experiment series are performed with the following prior distributions and hyperparameters:
 
 ```json
 {
-    "theta_low": 0.00001,
+    "theta_low": 0.00005,
     "theta_high": 0.0001,
     "maxinittraits": 5,
     "numloci": 3,
     "popsize": 250,
-    "simlength": 8000,
+    "simlength": 10000,
     "samplefraction" : 0.5,
     "migrationfraction_low" : 0.05,
     "migrationfraction_high" : 0.1,
     "replicates" : 1
 }
 ```
-Innovation rates and migration fractions are chosen uniformly at random from the ranges given for each simulation run.  Each locus evolves randomly, but we track combinations of loci as "classes" in the archaeological sense of the term as our observable variables.  Populations evolve for 8000 generations, giving approximately 800 transmission events per individual during a time slice (i.e., step in the regional metapopulation evolution).  We can think of that as approximately monthly opportunities for copying artifacts or behavioral traits, over a lifetime of approximately 65 years.
+
+In addition, all simulations are strictly unbiased transmission, where individuals interact with other individuals in the same local subpopulation.  Flow of cultural traits between local subpopulations occurs by individuals migrating between localities according to the `migrationfraction` hyperparameter.  
+
+Each individual in the population carries three independent dimensions of cultural variability, which evolve separately.  What is tracked in the database are the frequency of **combinations**, which are analogous to archaeological types or classes (compared to the usual practice of tracking single trait frequencies).  
+
+
+## Network Models ##
+
+
+### Model #1:  ni-pnn-1000 ###
+
+This experiment creates 100 probabilistic-nearest-neighbor regional temporal networks, and performs 1000 simulation runs across these 100 networks, ensuring that each network receives 10 simulation runs to characterize stochastic variability in CT outcomes.  
+
+The network models are created from the following prior distributions and hyperparameters:
+
+```json
+{
+  "network_type": "pnn",
+  "network_generator": "seriationct-build-spatial-neighbor-network.py",
+  "mean_edges_perpopulation_low": 1.1,
+  "mean_edges_perpopulation_high": 4.0,
+  "sd_edges_perpopulation_low": 0.1,
+  "sd_edges_perpopulation_high": 1.0,
+  "exponential_coefficient_low": 1.0,
+  "exponential_coefficient_high": 4.0,
+  "edgeweight": 10,
+  "num_populations_per_slice": 32,
+  "spatial_aspect_ratio": 1.0,
+  "slices": 10
+}
+```
+
+Some networks generated according to this specification will be more "nearest neighbor-y" than others, since the degree to which vertices are linked within any time slice is governed by an exponential decay kernel.  Higher values of the exponent in the decay kernel yield a tighter bound on distances within which vertices will be linked.  
+
+Understanding how identifiability changes given this hyperparameter, is a key question.  It is possible that low values create a wide distribution of edge distances, and thus become indistinguishable from simple random connection models of various types.  
+
+
+
+
+## Experiment Outline ##
+
+First, a random collection of network models, derived from the above hyperparameter specification, are generated.  
+
+Second, simulation runs are generated from the simulation hyperparameter specification.  
+Innovation rates and migration fractions are chosen uniformly at random from the ranges given for each simulation run.  Populations evolve for 10000 generations, giving approximately 1000 transmission events per individual during a time slice (i.e., step in the regional metapopulation evolution).  Given that we discard approximately 3000 generations to allow the population to reach mutation-copying equilibrium before we start sampling, this represents approximately monthly opportunities for learning or copying an artifact over a total duration of almost 600 years, which roughly matches the Mississippian period in much of the eastern United States.
 
 The raw data from each community in a simulated network model are then aggregated over the duration that community persists, giving us a time averaged picture of the frequency of cultural traits.  
 
@@ -48,20 +92,6 @@ I then perform the following sampling steps:
 
 3.  Within the overall sample from each simulation run, comprised now of the time averaged class frequencies from 30 sampled communities, I examine the classes/types themselves, and drop any types (columns) which do not have data values for at least 3 communities.  This is standard pre-processing for seriation analyses (or was in the Fordian manual days of seriation analysis) since without more than 3 values, a column does not contribute to ordering the communities.  
 
-These final samples are contained in directories:
+The [IDSS Seriation](https://github.com/clipo/idss-seriation) package is then used to seriate the stratified, filtered data files for each simulation run.  The "minmax-by-weight" solutions are what we will work with for classification and inference.
 
-* `slice-stratified-filtered-lineage-data`
-* `slice-stratified-filtered-linear-data`
-
-The [IDSS Seriation](https://github.com/clipo/idss-seriation) package is then used to seriate the stratified, filtered data files for each simulation run across the two models.  The results are located in subdirectories:
-
-* `seriations-linear-filtered`
-* `seriations-lineage-filtered`
-
-The "minmax-by-weight" solutions are what we will work with for classification and inference, and the results for both frequency and continuity seriation methods are copied into our primary data directories:
-
-* `train-lineage`
-* `train-linear`
-
-The analysis is a set of IPython notebooks and python scripts in `analysis/sc-1`.  
 

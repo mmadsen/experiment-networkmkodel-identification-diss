@@ -1,3 +1,5 @@
-.Rproj.user
-.Rhistory
-.RData
+*-sublime-*
+
+# the following can be extremely large, typically need to exclude it from Github
+# and store it over the long term on S3 or Glacier
+data/exported-data
