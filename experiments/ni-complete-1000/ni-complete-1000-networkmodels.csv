@@ -1,0 +1,2 @@
+model_id,model_uuid,network_type,generator,centroidx,centroidy,spatialsd,edgeweight,populations_per_slice,slices,rawdirectorypath,xyfilepath,compressedfilepath
+ni-complete-1000_pnn_159e4ef9-8435-401b-b205-54a2401bc257,159e4ef9-8435-401b-b205-54a2401bc257,pnn,seriationct-build-complete-network.py,500,500,100,10,32,10,data/rawnetworkmodels/ni-complete-1000_pnn_159e4ef9-8435-401b-b205-54a2401bc257,data/xyfiles/ni-complete-1000_pnn_159e4ef9-8435-401b-b205-54a2401bc257-XY.txt,data/networkmodels/ni-complete-1000_pnn_159e4ef9-8435-401b-b205-54a2401bc257.zip
