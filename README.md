@@ -73,6 +73,9 @@ Some networks generated according to this specification will be more "nearest ne
 Understanding how identifiability changes given this hyperparameter, is a key question.  It is possible that low values create a wide distribution of edge distances, and thus become indistinguishable from simple random connection models of various types.  
 
 
+#### Archived Data ####
+
+A data archive (tar format) that includes full raw, intermediate, and finished seriations is [available on Amazon S3](https://s3.amazonaws.com/madsen-dissertation/experiment-networkmkodel-identification-diss/ni-pnn-1000-data.tar)
 
 
 ## Experiment Outline ##
