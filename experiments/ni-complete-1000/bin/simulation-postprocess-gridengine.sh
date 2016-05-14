@@ -18,7 +18,7 @@ seriationct-simulation-resample-builder.py --inputdirectory data/exported-data \
     --samplesize 500 \
     --debug 0 \
     --dropthreshold 0.01 \
-    --parallelism 1
+    --parallelism 100
 
 
 for d in `ls jobs/resamplejob*.sh`
@@ -52,7 +52,28 @@ seriationct-simulation-sample-assemblages-builder.py --inputdirectory data/sampl
     --samplefraction 0.05 \
     --debug 0 \
     --jobdirectory jobs \
-    --parallelism 1
+    --parallelism 100
+
+seriationct-simulation-sample-assemblages-builder.py --inputdirectory data/sampled-traits \
+    --experiment ni-complete-1000 \
+    --outputdirectory data/assemblage-sampled \
+    --sampletype slicestratified \
+    --numsamples 1 \
+    --samplefraction 0.1 \
+    --debug 0 \
+    --jobdirectory jobs \
+    --parallelism 100
+
+seriationct-simulation-sample-assemblages-builder.py --inputdirectory data/sampled-traits \
+    --experiment ni-complete-1000 \
+    --outputdirectory data/assemblage-sampled \
+    --sampletype slicestratified \
+    --numsamples 1 \
+    --samplefraction 0.15 \
+    --debug 0 \
+    --jobdirectory jobs \
+    --parallelism 100
+
 
 
 for d in `ls jobs/assemsamplejob*.sh`
@@ -86,7 +107,7 @@ seriationct-simulation-filter-types-builder.py --inputdirectory data/assemblage-
     --minnonzero 3 \
     --debug 0 \
     --jobdirectory jobs \
-    --parallelism 1
+    --parallelism 300
 
 for d in `ls jobs/filterjob*.sh`
 do

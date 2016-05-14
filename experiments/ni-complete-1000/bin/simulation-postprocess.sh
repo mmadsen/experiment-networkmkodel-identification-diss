@@ -40,6 +40,26 @@ seriationct-simulation-sample-assemblages-builder.py --inputdirectory data/sampl
     --jobdirectory jobs \
     --parallelism 1
 
+seriationct-simulation-sample-assemblages-builder.py --inputdirectory data/sampled-traits \
+    --experiment ni-complete-1000 \
+    --outputdirectory data/assemblage-sampled \
+    --sampletype slicestratified \
+    --numsamples 1 \
+    --samplefraction 0.1 \
+    --debug 0 \
+    --jobdirectory jobs \
+    --parallelism 1
+
+seriationct-simulation-sample-assemblages-builder.py --inputdirectory data/sampled-traits \
+    --experiment ni-complete-1000 \
+    --outputdirectory data/assemblage-sampled \
+    --sampletype slicestratified \
+    --numsamples 1 \
+    --samplefraction 0.15 \
+    --debug 0 \
+    --jobdirectory jobs \
+    --parallelism 1
+
 
 for d in `ls jobs/assemsamplejob*.sh`; do ( sh $d ); done
 

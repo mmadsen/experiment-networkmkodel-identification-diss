@@ -14,7 +14,7 @@ seriationct-seriation-builder.py --inputdirectory data/filtered-data \
 	--continuity 1 \
 	--experiment ni-pnn-1000 \
 	--jobdirectory jobs \
-	--parallelism 100 \
+	--parallelism 300 \
 	--debug 0
 
 

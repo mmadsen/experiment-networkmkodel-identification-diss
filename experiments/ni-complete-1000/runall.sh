@@ -4,14 +4,14 @@
 set -e
 set -o errexit
 
-#sh bin/build-networkmodel.sh
+sh bin/build-networkmodel.sh
 
 sh bin/build-simulations.sh
 #sh bin/run-simulations.sh
 sh bin/run-simulations-gridengine.sh
 
-sh bin/export-data.sh
-sh bin/simulation-postprocess.sh
+sh bin/export-data-gridengine.sh
+sh bin/simulation-postprocess-gridengine.sh
 
 sh bin/build-seriations.sh
 sh bin/run-seriations-gridengine.sh
